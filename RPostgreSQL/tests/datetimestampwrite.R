@@ -29,6 +29,8 @@ if ((Sys.getenv("POSTGRES_USER") != "") &
 
     sql <- paste("insert into tempostgrestable ",
                  "values ('2011-03-07', '2011-03-07 16:30:39') ")
+    sql <- paste("insert into tempostgrestable ",
+                 "values ('infinity', 'infinity') ")
     res <- dbGetQuery(con, sql)
 
     dat <- dbReadTable(con, "tempostgrestable")

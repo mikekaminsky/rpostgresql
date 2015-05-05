@@ -437,14 +437,24 @@ postgresqlFetch <- function(res, n=0, ...) {
     else
         oldClass(rel) <- "data.frame"
 
+    converttime <- function(x, format="%Y-%m-%d %H:%M:%OS"){
+      xc <- x
+      xc[x%in%c("-infinity","infinity")] <- NA
+      d <- as.POSIXct(xc, format = format)
+      d[x== "infinity"] <- as.POSIXct(Inf, origin="1970-01-01")
+      d[x=="-infinity"] <- as.POSIXct(-Inf, origin="1970-01-01")
+      return(d)
+    }
+
     flds <- dbGetInfo(res)$fieldDescription[[1]]$type
     for(i in 1:length(flds)) {
         if(flds[[i]] == 1114) {  ## 1114 corresponds to Timestamp without TZ (mapped to POSIXct class)
-            rel[,i] <- as.POSIXct(rel[,i])
+            rel[,i] <- converttime(rel[,i])
+            #rel[,i] <- as.POSIXct(rel[,i])
         } else if(flds[[i]] == 1082) {  ## 1082 corresponds to Date (mapped to Date class)
-            rel[,i] <- as.Date(rel[,i])
+            rel[,i] <- as.Date(converttime(rel[,i]))
         } else if(flds[[i]] == 1184)  {  ## 1184 corresponds to Timestamp with TimeZone
-            rel[,i] <- as.POSIXct(sub('([+-]..)$', '\\100', sub(':(..)$','\\1' ,rel[,i])), format="%Y-%m-%d %H:%M:%OS%z")
+            rel[,i] <- converttime(sub('([+-]..)$', '\\100', sub(':(..)$','\\1' ,rel[,i])), format="%Y-%m-%d %H:%M:%OS%z")
         }
     }
     rel

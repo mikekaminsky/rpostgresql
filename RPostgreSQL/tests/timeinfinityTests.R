@@ -1,6 +1,6 @@
-## Test of date and datetime types, based on earlier version in inst/devTests
+## Test of special value 'infinity' in date/time columns
 ##
-## Dirk Eddelbuettel, 21 Oct 2008
+## Michael Kaminsky,  8 May 2015
 
 ## only run this if this env.var is set correctly
 if ((Sys.getenv("POSTGRES_USER") != "") &
@@ -35,13 +35,8 @@ dbTypeTests <- function(con, dateclass="timestamp without time zone") {
         dbRemoveTable(con, "tempostgrestable")
 
     dbGetQuery(con, paste("create table tempostgrestable (tt ", dateclass, ", zz integer);", sep=""))
-    dbGetQuery(con, "insert into tempostgrestable values('2008-07-01 14:15:16.123', 1);")
-
-    now <- ISOdatetime(2000,1,2,3,4,5.678)
-    dbGetQuery(con, paste("insert into tempostgrestable values('", format(now), "', 2);", sep=""))
-
-    dbGetQuery(con, paste("insert into tempostgrestable values('", "infinity", "', 3);", sep=""))
-
+    dbGetQuery(con, paste("insert into tempostgrestable values('", "infinity", "', 1);", sep=""))
+    dbGetQuery(con, paste("insert into tempostgrestable values('", "-infinity", "', 2);", sep=""))
     res <- dbReadTable(con, "tempostgrestable")
     print(res)
 
@@ -49,16 +44,19 @@ dbTypeTests <- function(con, dateclass="timestamp without time zone") {
     data <- fetch(res, n=-1)
     print(dbColumnInfo(res))
 
-    times <- data[,1]
-    print(times)
-    print(class(times[1]))
+    posinfinity <- data[1,1]
+    neginfinity <- data[2,1]
 
-    print(diff(times))
+    if(is.infinite(posinfinity) & is.infinite(neginfinity)){
+      if (posinfinity > Sys.Date() & neginfinity < Sys.Date())
+      cat('PASS: Infinity returned properly\n')
+    }else{
+      cat('FAIL: Infinity not returned properly\n')
+    }
 
     dbRemoveTable(con, "tempostgrestable")
     invisible(NULL)
 }
-
 
     dbTypeTests(con, "timestamp")
     dbTypeTests(con, "timestamp with time zone")
